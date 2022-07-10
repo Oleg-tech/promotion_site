@@ -1,0 +1,17 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <link type="text/css" href="{% static 'css/script.css' %}" rel="stylesheet" />
+    {%for value in products.values %}
+        <div class="divs" align="center">
+            <div class="info">
+                {{value.0}}
+                {{value.1}}
+                {{value.2}}
+            </div>
+        </div>
+    {%endfor%}
+
+{% endblock %}

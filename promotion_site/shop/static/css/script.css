@@ -1,0 +1,14 @@
+.divs{
+    height:300px;
+    width:200px;
+    background-color: rgb(150, 145, 145);
+    display: inline-block;
+    border-width: 15px 15px 15px 15px;
+    border-colour: black;
+    float: left;
+    padding: 20px;
+    margin: 5px;
+}
+.info{
+
+}
