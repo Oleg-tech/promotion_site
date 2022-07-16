@@ -6,5 +6,5 @@ class ShopConfig(AppConfig):
     name = 'shop'
 
     def ready(self):
-        from .shop_scheduler import full_models
-        full_models.start()
+        from .shop_scheduler import start_scheduling
+        start_scheduling.start()

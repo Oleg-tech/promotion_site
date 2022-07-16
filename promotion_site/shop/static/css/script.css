@@ -1,4 +1,4 @@
-.divs{
+.divs {
     height:300px;
     width:200px;
     background-color: rgb(150, 145, 145);
@@ -9,6 +9,9 @@
     padding: 20px;
     margin: 5px;
 }
-.info{
 
+#bottom_bar {
+    display: inline;
+    width:500px;
+    background-color: rgb(25, 25, 25)
 }

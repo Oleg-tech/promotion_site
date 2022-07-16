@@ -8,7 +8,7 @@ categories = {
         ['novus', 'https://novus.zakaz.ua/uk/promotions/?category_id=drinks&page='],
         ['megamarket', 'https://megamarket.zakaz.ua/uk/promotions/?category_id=drinks-megamarket&page='],
         ['eko', 'https://eko.zakaz.ua/uk/promotions/?category_id=drinks-ekomarket&page='],
-        ['auchan', 'https://auchan.zakaz.ua/uk/promotions/?category_id=drinks-auchan']
+        ['auchan', 'https://auchan.zakaz.ua/uk/promotions/?category_id=drinks-auchan&page=']
     ],
     'alcohol': [
         ['varus', 'https://varus.zakaz.ua/uk/promotions/?category_id=alcohol-varus&page='],

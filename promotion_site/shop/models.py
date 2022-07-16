@@ -15,17 +15,26 @@ class Product(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название")
     old_price = models.CharField(max_length=20, verbose_name="Старая цена")
     new_price = models.CharField(max_length=20, verbose_name="Новая цена")
-    # picture = models.ImageField(upload_to='photos', null=True, verbose_name="Фото")
+    # picture = models.ImageField(upload_to='images/', verbose_name="Фото")
+    picture = models.CharField(max_length=100, verbose_name="Фото")
     percent_of_sale = models.CharField(max_length=10, verbose_name="Скидка")
     date_of_end = models.CharField(max_length=10, verbose_name="Окончание")
     category = models.CharField(max_length=20, verbose_name="Категория")
-    # shop_name = models.ForeignKey("Shop", on_delete=models.PROTECT, null=True, verbose_name="Магазин")
+    country = models.CharField(max_length=20, verbose_name="Страна")
     shop_name = models.CharField(max_length=20, verbose_name="Магазин")
+    # shop_name = models.ForeignKey("Shop", on_delete=models.PROTECT, null=True, verbose_name="Магазин")
 
     class Meta:
         verbose_name = "Продукты"
         verbose_name_plural = "Продукты"
         ordering = ['name', 'category']
+
+    def image_tag(self):
+        from django.utils.html import mark_safe
+        return mark_safe(f'<img src="{self.picture}" width="100" />')
+        # return mark_safe('<img src="{}" width="100" />'.format(self.picture.url))
+    image_tag.short_description = 'Image'
+    image_tag.allow_tags = True
 
     # def absolute_url(self):
     #     return reverse('name', kwargs={'shop': self.name})
@@ -41,4 +50,3 @@ class Product(models.Model):
 #         verbose_name = "Магазины"
 #         verbose_name_plural = "Магазины"
 #         # ordering = ['name']
-

@@ -1,92 +1,102 @@
-from selenium import webdriver
-from selenium.webdriver import ActionChains
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-import time
+import requests
+import json
+from bs4 import BeautifulSoup
+
 from shop.models import Product
-
-links = [
-    'https://.zakaz.ua/uk/promotions/?category_id=drinks',
-    'https://.zakaz.ua/uk/promotions/?category_id=eighteen-plus',
-    'https://.zakaz.ua/uk/promotions/?category_id=meat-fish-poultry',
-    'https://.zakaz.ua/uk/promotions/?category_id=dairy-and-eggs',
-    'https://.zakaz.ua/uk/promotions/?category_id=fruits-and-vegetables'
-]
-categories = ['drinks', 'alcohol', 'meat', 'milk', 'fruits']
-
-shops = ["novus", "megamarket", 'varus', 'auchan', 'eko']
-
-SILPO = {
-    'https://shop.silpo.ua/all-offers?filter_CATEGORY=(22)': 'alcohol',
-    # 'https://shop.silpo.ua/all-offers?filter_CATEGORY=(316__277)': 'meat',
-    # 'https://shop.silpo.ua/all-offers?filter_CATEGORY=(130)': 'sauce'
-}
+from shop.shop_scheduler.config import *
+from shop.shop_scheduler.get_json import get_file
 
 
-def parse_zakaz(url):
-    names, new_prices, old_prices, discount, weight, date = list(), list(), list(), list(), list(), list()
-    count = 2
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-    driver.maximize_window()
+def insert_into_table(name, old_price, new_price, picture, discount, date, category, country, shop_name):
+    product = Product.objects.create(
+        name=name, old_price=old_price, new_price=new_price, picture=picture, percent_of_sale=discount,
+        date_of_end=date, category=category, country=country, shop_name=shop_name)
+    product.save()
 
-    try:
-        driver.get(url=url)
-        time.sleep(1)
-        while True:
-            time.sleep(0.5)
+
+def split_json():
+    get_file()
+    with open('shop/static/json/data.json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    items = data['items']
+
+    for item in items:
+        if not item['storeQuantity']:
+            continue
+        # print(item['slug'])
+        discount = None
+        slug = item['slug']
+
+        if item['promoId'] == 'melkoopt':
+            old_price = item['price']
+            new_price = list(filter(lambda item: item['Type'] == 'specialPrice', item['prices']))[0]['Value']
+            discount = item['promotions'][0]['description']
+        else:
+            new_price = item['price']
+            old_price = item['oldPrice']
+            discount = round((old_price - new_price) * (100.0 / old_price))
+
+        country = list(filter(lambda item: item['key'] == 'country', item['parameters']))[0]['value']
+
+        insert_into_table(
+            item['name'], old_price, new_price, item['mainImage'], discount,
+            item['promotion']['stopAfter'], 'None', country, 'silpo'
+        )
+
+
+def parse_zakaz(url, name_of_shop, cat):
+    page_count = 1
+    while True:
+        request = requests.get(url+str(page_count))
+        print(url + str(page_count))
+        page_count += 1
+        if BeautifulSoup(request.text, 'html.parser').find("div", class_="ProductsBox") != None:    # check if link is actual
             try:
-                driver.find_element(By.XPATH, '/html/body/div[7]/div/div/div[1]/div/div/button[2]').click()
-                time.sleep(0.5)
-            except:
-                print('Button not found')
-            find_names = driver.find_elements(By.CLASS_NAME, "ProductTile__title")
-            find_old_price = driver.find_elements(By.CLASS_NAME, "ProductTile__oldPrice")
-            find_new_price = driver.find_elements(By.CLASS_NAME, "Price__value_discount")
-            find_discount = driver.find_elements(By.CLASS_NAME, "Badge__text")
-            find_weight = driver.find_elements(By.CLASS_NAME, "ProductTile__weight")
-            find_date = driver.find_elements(By.CLASS_NAME, "DiscountDisclaimer_productTile")
-            time.sleep(0.5)
-            for i in range(len(find_names)):
-                names.append(find_names[i].text)
-                new_prices.append(find_new_price[i].text)
-                old_prices.append(find_old_price[i].text)
-                discount.append(find_discount[i].text)
-                weight.append(find_weight[i].text)
-                date.append(find_date[i].text)
+                soup = BeautifulSoup(request.text, 'html.parser')
+                new_url = soup.find_all('a', class_="ProductTile", href=True)                       # find all products
+                for i in new_url:
 
-            find_button = driver.find_element(By.LINK_TEXT, f'{str(count)}')
-            find_button.click()
-            time.sleep(1)
-            count += 1
-            if find_button:
-                continue
-            if not find_button:
-                break
+                    # with open(f'media/images/{str(get_photo_id())}.jpg', 'wb') as file:        # save image
+                    #     res = requests.get(i.find('img', {'loading': 'lazy'})['src'])               # find image
+                    #     file.write(res.content)
+                    # set_photo_id()
 
-    except Exception as ex:
-        print(ex)
-    finally:
-        driver.close()
-        driver.quit()
-        return names, new_prices, old_prices, discount, weight, date
+                    # for checking every product in detail
+                    new_request = requests.get('https://'+name_of_shop+'.zakaz.ua/'+i['href'])
+                    new_soup = BeautifulSoup(new_request.text, 'html.parser')
+
+                    def get_country():
+                        if new_soup.find('li', {'data-marker': 'Taxon country'}):                   # find country
+                            return new_soup.find('li', {'data-marker': 'Taxon country'}).text.replace("Країна", "")
+                        else:
+                            return ''
+
+                    insert_into_table(
+                        new_soup.find('h1', class_="BigProductCardTopInfo__title").text,
+                        i.find('span', class_='Price__value_minor').text,
+                        i.find('span', class_='Price__value_discount').text,
+                        # f'images/{str(get_photo_id()-1)}.jpg',
+                        i.find('img', {'loading': 'lazy'})['src'],
+                        i.find('div', class_='ProductTile__badges').text,
+                        i.find('span', class_='DiscountDisclaimer').text, cat, get_country(), name_of_shop)
+            except Exception as ex:
+                collect_errors(url, ex)
+                print('Error')
+        else:
+            break
 
 
+@time_counter
 def main_parse():
+    # set_null_photo_id()
     Product.objects.all().delete()  # clear table
+    remove_from_folder()    # delete all product photos
+
+    # Silpo
+    split_json()
 
     # Zakaz
-    for shop in range(len(shops)):  # insert new data into table
-        for j in range(len(links)):
-            link = links[j][:8] + shops[shop] + links[j][8:]
-            product_data = parse_zakaz(link)
-            for i in range(len(product_data[0])):
-                product = Product.objects.create(
-                    name=product_data[0][i],
-                    old_price=product_data[2][i],
-                    new_price=product_data[1][i],
-                    percent_of_sale=product_data[3][i],
-                    date_of_end=product_data[5][i],
-                    category=categories[j],
-                    shop_name=shops[shop])
-                product.save()
+    for cat in categories.keys():
+        for shop in range(len(categories[cat])):
+            parse_zakaz(categories[cat][shop][1], categories[cat][shop][0], cat)

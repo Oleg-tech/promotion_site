@@ -6,6 +6,9 @@
     <link type="text/css" href="{% static 'css/script.css' %}" rel="stylesheet" />
     {% for product in products %}
         <div class="divs" align="center">
+            <div>
+                <img src="{{ product.picture }}">
+            </div>
             <div class="info">
                 {{product.name}}
                 {{product.old_price}}
@@ -13,5 +16,26 @@
             </div>
         </div>
     {%endfor%}
+    <br>
+    <div>
+        Page {{page_obj.number}} of {{page_obj.paginator.num_pages}}
+    </div>
+    <br>
+    <div>
+        <ul id="bottom_bar">
+            {% if page_obj.has_previous %}
+            <li><a href="?page={{page_obj.previous_page_number}}">&larr;</a></li>
+            {%endif%}
 
+            {% for contact in page_obj.paginator.page_range %}
+            <li>
+                <a href="?page={{ contact }}">{{contact}}</a>
+            </li>
+            {%endfor%}
+
+            {% if page_obj.has_next %}
+            <li><a href="?page={{ page_obj.next_page_number }}">&rarr;</a></li>
+            {%endif%}
+        </ul>
+    </div>
 {% endblock %}

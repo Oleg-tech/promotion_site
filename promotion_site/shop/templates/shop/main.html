@@ -5,7 +5,7 @@
 <link type="text/css" href="{% static 'css/main.css' %}" rel="stylesheet" />
 <div class="pictures" style="background-colour: rgb(162, 144, 140);">
     <div ><a href="{% url 'showshop' shop='novus' %}"><img class="parts" src="{% static 'images/novus.jpg' %}"></a></div>
-    <div ><a href="#"><img class="parts" src="{% static 'images/silpo.png' %}"></a></div>
+    <div ><a href="{% url 'showshop' shop='silpo' %}"><img class="parts" src="{% static 'images/silpo.png' %}"></a></div>
     <div ><a href="{% url 'showshop' shop='auchan' %}"><img class="parts" src="{% static 'images/ashan.jpg' %}"></a></div>
     <div ><a href="{% url 'showshop' shop='megamarket' %}"><img class="parts" src="{% static 'images/megamarket.jpg' %}"></a></div>
     <div ><a href="{% url 'showshop' shop='varus' %}"><img class="parts" src="{% static 'images/varus.jpg' %}"></a></div>
